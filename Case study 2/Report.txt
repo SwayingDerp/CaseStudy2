@@ -1,0 +1,22 @@
+1.2)
+2. 
+-Small h has smooth curve matching theoretical solution
+-Large h is has more oscillations, overshoot, and alot of instability
+3.
+τ determines the circuit's response speed to voltage changes. 
+It's the natural time scale for the RC circuit's transient behavior
+Part 2.
+2.2)
+2.
+-Capacitator blocks DC current but pass voltage
+-Inductor block voltage charge but pass DC current
+-Shows opposite behaviour:
+*Capacitor voltage follows input, current goes to zero
+*Inductor current follows input, voltage goes to zero
+-At steady state current:
+Capacitor: 0.000 A (acts like an open circuit)
+The current starts high during charging but decays exponentially to zero
+Once fully charged, no current flows through the capacitor
+Inductor: 0.010 A (acts like a short circuit)
+The current starts at zero and builds up exponentially to I = V/R = 1V/100Ω = 0.010 A
+Once in steady state, current flows freely through the inductor
