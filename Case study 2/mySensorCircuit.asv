@@ -37,20 +37,25 @@ function Vout = mySensorCircuit(Vin,h)
         chunk_size = 10000;
         v_C_current = 0;
         i_current = 0;
+        
         for chunk_start = 1:chunk_size:N
             chunk_end = min(chunk_start + chunk_size - 1, N);
             chunk_length = chunk_end - chunk_start + 1;
+            
             v_C_chunk = zeros(1, chunk_length);
             i_chunk = zeros(1, chunk_length);
             v_C_chunk(1) = v_C_current;
             i_chunk(1) = i_current;
+            
             A = [1 - h/(R*C), -h/C; h/L, 1 - (h*R)/L];
             B = [h/(R*C); h/L];
+            
             for k = 1:chunk_length-1
                 x_next = A * [v_C_chunk(k); i_chunk(k)] + B * Vin(chunk_start + k - 1);
                 v_C_chunk(k+1) = x_next(1);
                 i_chunk(k+1) = x_next(2);
             end
+            
             Vout(chunk_start:chunk_end) = i_chunk * R;
             v_C_current = v_C_chunk(end);
             i_current = i_chunk(end);

@@ -17,53 +17,44 @@
 
 function Vout = myFilterCircuit(Vin,h)
     % Default RC circuit (Task 1)
-    R = 1e3;    % Resistance = 1 kΩ
-    C = 1e-6;   % Capacitance = 1 μF
-    tau = R * C; % Time constant
+    R = 1e3;
+    C = 1e-6;
     
-    % TASK 4 IMPLEMENTATION - MUSIC FILTER 
-    % Uncomment below and comment above for Task 4 music filter
-    % % Music filter - bandpass for audio (removes 60Hz hum and high-frequency noise)
-    % L = 0.01;   % Smaller inductance
-    % C = 1e-6;   % 1 μF capacitor
-    % R = 100;    % Ω - Critical damping for clean audio
-
+    % TASK 4 - MUSIC FILTER (COMMENTED OUT)
+    % L = 0.01;
+    % C = 1e-6;
+    % R = 100;
     
-    % Initialize output voltage array
+    N = length(Vin);
+    
+    % Ensure Vin is a row vector for consistent operations
+    if size(Vin, 1) > size(Vin, 2)
+        Vin = Vin';
+    end
+    % Pre-allocate Vout with same dimensions as Vin
     Vout = zeros(size(Vin));
-    
-    % Set initial condition: capacitor voltage starts at 0V
     Vout(1) = 0;
-    
-    % TASK 4 RLC IMPLEMENTATION (COMMENTED OUT)
-    % Uncomment below and comment RC simulation for Task 4 music filter
-    % % RLC circuit simulation for music filter
-    % N = length(Vin);
-    % v_C = zeros(1, N);  % Capacitor voltage
-    % i = zeros(1, N);    % Current through circuit
-    % 
-    % % Set initial conditions
-    % v_C(1) = 0;
-    % i(1) = 0;
-    % 
-    % % State-space matrices for RLC circuit
-    % A = [1, h/C; -h/L, 1 - h*R/L];
-    % B = [0; h/L];
-    % 
-    % for k = 1:N-1
-    %     x_next = A * [v_C(k); i(k)] + B * Vin(k);
-    %     v_C(k+1) = x_next(1);
-    %     i(k+1) = x_next(2);
-    % end
-    % 
-    % % Output voltage across resistor (bandpass characteristic)
-    % Vout = i * R;
-    
-    % RC circuit simulation using numerical integration (Forward Euler) - Task 1
-    % Equation (8): i_C = C * dv_C/dt = (v_in - v_C)/R
-    % Rearranged as Equation (10): dv_C/dt = (v_in - v_C)/(R*C)
-    for n = 2:length(Vin)
-        % Forward Euler method
-        Vout(n) = Vout(n-1) + h * (Vin(n-1) - Vout(n-1)) / (R * C);
+    if N > 10000
+        chunk_size = 10000;
+        v_out_current = 0;
+        for chunk_start = 1:chunk_size:N
+            chunk_end = min(chunk_start + chunk_size - 1, N);
+            chunk_length = chunk_end - chunk_start + 1;
+            v_out_chunk = zeros(1, chunk_length);
+            v_out_chunk(1) = v_out_current;
+            for n = 2:chunk_length
+                v_out_chunk(n) = v_out_chunk(n-1) + h * (Vin(chunk_start + n - 2) - v_out_chunk(n-1)) / (R * C);
+            end
+            Vout(chunk_start:chunk_end) = v_out_chunk;
+            v_out_current = v_out_chunk(end);
+        end
+    else
+        for n = 2:N
+            Vout(n) = Vout(n-1) + h * (Vin(n-1) - Vout(n-1)) / (R * C);
+        end
+    end
+    % Ensure output has same orientation as input
+    if size(Vin, 1) > size(Vin, 2)
+        Vout = Vout';
     end
 end
