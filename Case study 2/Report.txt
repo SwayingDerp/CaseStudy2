@@ -20,3 +20,9 @@ Once fully charged, no current flows through the capacitor
 Inductor: 0.010 A (acts like a short circuit)
 The current starts at zero and builds up exponentially to I = V/R = 1V/100Ω = 0.010 A
 Once in steady state, current flows freely through the inductor
+3.
+3.1)
+Three oscillation regimes by varying R:
+Large R: Quick decay (overdamped)
+Medium R: Tuned oscillation (critically damped)
+Small R: Numerical instability/growing oscillations
