@@ -16,8 +16,17 @@ for f = frequencies
     % Plot last few cycles to see steady state
     figure;
     cycles_to_plot = min(5, floor(length(t)/2));
-    plot_Start = length(t) - cycles_to_plot * round(1/(f*h));
+    
+    % Calculate samples per cycle and ensure valid plot range
+    samples_per_cycle = round(1/(f*h));
+    plot_Start = max(1, length(t) - cycles_to_plot * samples_per_cycle);
     plot_range = plot_Start:length(t);
+    
+    % Ensure plot_range doesn't exceed array bounds
+    if plot_Start > length(t)
+        plot_range = 1:length(t);
+        warning('Not enough samples for %d Hz, plotting entire signal', f);
+    end
     
     plot(t(plot_range)*1000, Vin(plot_range), 'r-', 'LineWidth', 1, 'DisplayName', 'Input');
     hold on;
