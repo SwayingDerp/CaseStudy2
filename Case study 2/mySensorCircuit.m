@@ -15,17 +15,16 @@
 % outputs:
 % Vout - time-series vector representing the output voltage of a circuit
 
-function Vout = mySensorCircuit(Vin,h)
-    % Default RLC circuit (Task 3)
-    R = 100;
-    L = 0.1;
-    C = 0.1e-6;
-    
-    % TASK 4 - HELICOPTER DETECTOR (COMMENTED OUT)
-    % f_target = 84; % Ingenuity rotor frequency
-    % L = 1.0;
-    % C = 1/((2*pi*f_target)^2 * L);
-    % R = 50;
+function Vout = mySensorCircuit(Vin, h, R, L, C)
+% Modified to accept component parameters for testing by turning task 3
+% into default if there is no task
+
+    % If no component values provided, use defaults
+    if nargin < 3
+        R = 100;
+        L = 0.1;
+        C = 0.1e-6;
+    end
     
     N = length(Vin);
     % Ensure Vin is a row vector for consistent operations
@@ -33,6 +32,7 @@ function Vout = mySensorCircuit(Vin,h)
         Vin = Vin';
     end
     Vout = zeros(size(Vin));
+    
     if N > 10000
         chunk_size = 10000;
         v_C_current = 0;
@@ -69,8 +69,10 @@ function Vout = mySensorCircuit(Vin,h)
         end
         Vout = i * R;
     end
+    
     % TASK 4 ENVELOPE DETECTION (COMMENTED OUT)
     % Vout = abs(Vout);
+    
     if size(Vin, 1) > size(Vin, 2)
         Vout = Vout';
     end
