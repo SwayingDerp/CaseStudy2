@@ -17,14 +17,14 @@
 
 function Vout = myResonatorCircuit(Vin,h)
     % Default RL circuit (Task 2)
-    R = 100;
-    L = 0.1;
+    %R = 100;
+    %L = 0.1;
     
     % TASK 4 - TUNING FORK (COMMENTED OUT)
-    % f_resonance = 440; % A4 = 440 Hz
-    % L = 0.1;
-    % C = 1/((2*pi*f_resonance)^2 * L);
-    % R = 5;
+     f_resonance = 440; % A4 = 440 Hz
+     L = 0.1;
+     C = 1/((2*pi*f_resonance)^2 * L);
+     R = 5;
     
     N = length(Vin);
     

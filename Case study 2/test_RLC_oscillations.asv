@@ -9,10 +9,18 @@ Vin(2:end) = 1; % Step input
 
 % Different component sets for different behaviors
 component_sets = {
-    [100, 0.1, 0.1e-6],   % Quick decay 
-    [10, 0.1, 0.1e-6],    % Tuned oscillation
-    [1, 0.1, 0.1e-6],     % Slow decay  
-    [0.5, 0.1, 0.1e-6]    % Unstable (numerical)
+    [2000, 0.05, 0.1e-6],   % change L
+    [2000, 0.5, 0.1e-6],    
+    [2000, 1, 0.1e-6],    
+    [2000, 2, 0.1e-6],  
+
+    [2000, 0.1, 0.05e-6],   % change C
+    [2000, 0.1, 0.1e-6],    
+    [2000, 0.1, 0.15e-6],    
+    [2000, 0.1, 0.2e-6]  
+};
+component_sets2 = {
+    
 };
 
 colors = {'b-', 'y-', 'r-', 'm-'};
@@ -29,9 +37,13 @@ for i = 1:length(component_sets)
     % CALL mySensorCircuit WITH CUSTOM COMPONENTS
     Vout = mySensorCircuit(Vin, h, R, L, C);
     
+    if (i <= length(component_sets)/2)
     plot(t*1000, Vout, colors{i}, 'LineWidth', 2, 'DisplayName', labels{i});
     hold on;
-  
+    else
+       figure
+       plot(t*1000, Vout, colors{i}, 'LineWidth', 2, 'DisplayName', labels{i});
+
     
     % Calculate damping ratio for analysis
     w0 = 1/sqrt(L*C);
@@ -43,7 +55,7 @@ for i = 1:length(component_sets)
     soundsc(Vout);
     pause(0.5);
 end
-
+end
 plot(t*1000, Vin, 'k--', 'LineWidth', 1, 'DisplayName', 'Input');
 xlabel('Time (ms)'); 
 ylabel('Voltage (V)');
