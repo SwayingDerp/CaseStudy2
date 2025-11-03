@@ -71,7 +71,7 @@ function Vout = mySensorCircuit(Vin, h, R, L, C)
     end
     
     % TASK 4 ENVELOPE DETECTION (COMMENTED OUT)
-    % Vout = abs(Vout);
+    Vout = abs(Vout);
     
     if size(Vin, 1) > size(Vin, 2)
         Vout = Vout';

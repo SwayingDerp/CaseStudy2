@@ -21,9 +21,9 @@ function Vout = myFilterCircuit(Vin,h)
     C = 1e-6;
     
     % TASK 4 - MUSIC FILTER (COMMENTED OUT)
-    % L = 0.01;
-    % C = 1e-6;
-    % R = 100;
+    L = 0.01;
+    C = 1e-6;
+    R = 100;
     
     N = length(Vin);
     

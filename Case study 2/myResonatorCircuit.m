@@ -58,7 +58,7 @@ function Vout = myResonatorCircuit(Vin,h)
     end
     
     % TASK 4 OUTPUT (COMMENTED OUT)
-    % Vout = i * R;
+    Vout = i * R;
     
     if size(Vin, 1) > size(Vin, 2)
         Vout = Vout';

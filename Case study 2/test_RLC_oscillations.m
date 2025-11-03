@@ -10,14 +10,14 @@ Vin(2:end) = 1; % Step input
 % Different component sets for different behaviors
 component_sets = {
     [100, 0.1, 0.1e-6],   % Quick decay 
-    [10, 0.1, 0.1e-6],    % Tuned oscillation
-    [1, 0.1, 0.1e-6],     % Slow decay  
-    [0.5, 0.1, 0.1e-6]    % Unstable (numerical)
+    [50, 0.1, 0.1e-6],    % Tuned oscillation
+    [10, 0.1, 0.1e-6],    % Unstable
+
 };
 
 colors = {'b-', 'y-', 'r-', 'm-'};
-labels = {'Quick Decay (R=100Ω)', 'Tuned Oscillation (R=10Ω)', ...
-          'Slow Decay (R=1Ω)', 'Unstable (R=0.5Ω)'};
+labels = {'Quick Decay (R=100Ω)', 'Tuned Oscillation (R=50Ω)', ...
+          'Unstable (R=10Ω)'};
 
 figure;
 
