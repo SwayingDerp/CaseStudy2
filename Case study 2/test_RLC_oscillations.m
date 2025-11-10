@@ -12,7 +12,6 @@ component_sets = {
     [100, 0.1, 0.1e-6],   % Quick decay 
     [50, 0.1, 0.1e-6],    % Tuned oscillation
     [10, 0.1, 0.1e-6],    % Unstable
-
 };
 
 colors = {'b-', 'y-', 'r-', 'm-'};
@@ -27,7 +26,7 @@ for i = 1:length(component_sets)
     C = component_sets{i}(3);
     
     % CALL mySensorCircuit WITH CUSTOM COMPONENTS
-    Vout = mySensorCircuit(Vin, h, R, L, C);
+    Vout = simulate_RLC_circuit(Vin, h, R, L, C);
     
     plot(t*1000, Vout, colors{i}, 'LineWidth', 2, 'DisplayName', labels{i});
     hold on;
@@ -41,7 +40,7 @@ for i = 1:length(component_sets)
 
     fprintf('Playing: %s\n', labels{i});
     soundsc(Vout);
-    pause(0.5);
+    pause(2);
 end
 
 plot(t*1000, Vin, 'k--', 'LineWidth', 1, 'DisplayName', 'Input');

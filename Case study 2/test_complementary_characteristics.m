@@ -12,7 +12,7 @@ Vin(2:end) = 1; % Step input: 0V at t=0, 1V for t>0
 
 %% RC Circuit Simulation
 fprintf('RC CIRCUIT (R=1kΩ, C=1μF):\n');
-Vout_RC = myFilterCircuit(Vin, h);
+Vout_RC = simulate_RC_circuit(Vin, h);
 
 % Calculate current through capacitor (i_C = C * dv_C/dt)
 R_RC = 1e3; C_RC = 1e-6;
@@ -31,7 +31,7 @@ fprintf('  Final current through capacitor: %.2e A\n\n', i_C_steady);
 
 %% RL Circuit Simulation
 fprintf('RL CIRCUIT (R=100Ω, L=100mH):\n');
-v_L_RL = myResonatorCircuit(Vin, h);
+v_L_RL = simulate_RL_Circuit(Vin, h);
 
 % Calculate current through inductor (from RL circuit equations)
 R_RL = 100; L_RL = 0.1;

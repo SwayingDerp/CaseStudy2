@@ -20,7 +20,7 @@ Vin = zeros(size(t));
 Vin(2:end) = 1; % Step input: 1V for t > 0
 
 % Simulate RC charging circuit
-Vout = myFilterCircuit(Vin, h_accurate);
+Vout = simulate_RC_circuit(Vin, h_accurate);
 
 R = 1e3;
 C = 1e-6;
@@ -31,8 +31,8 @@ V_in_fine = ones(size(t_fine));
 V_in_fine(1) = 0;
 V_in_coarse = ones(size(t_coarse));
 V_in_coarse(1) = 0;
-V_fine = myFilterCircuit(V_in_fine, 0.0001);
-V_coarse = myFilterCircuit(V_in_coarse, 0.002);
+V_fine = simulate_RC_circuit(V_in_fine, 0.0001);
+V_coarse = simulate_RC_circuit(V_in_coarse, 0.002);
 V_C_theoretical_fine = 1 - exp(-t_fine/tau);
 V_C_theoretical_coarse = 1 - exp(-t_coarse/tau);
 

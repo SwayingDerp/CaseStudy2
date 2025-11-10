@@ -15,17 +15,29 @@
 % outputs:
 % Vout - time-series vector representing the output voltage of a circuit
 
-function Vout = mySensorCircuit(Vin, h, R, L, C)
+function Vout = mySensorCircuit2(Vin, h)
 % Modified to accept component parameters for testing by turning task 3
 % into default if there is no task
 
-    % If no component values provided, use defaults
-    if nargin < 3
-        R = 100;
-        L = 0.1;
-        C = 0.1e-6;
-    end
+% Helicopter detector PART 4 - tuned to 84 Hz
+    f_target = 84;  % Hz - Ingenuity rotor frequency
+    L = 0.5;        % Reduced inductance for better numerical stability
+    C = 1/((2*pi*f_target)^2 * L);
+    R = 50;         % Increased resistance for wider bandwidth
+
     
+
+
+    
+    
+    N = length(Vin);
+    % Ensure Vin is a row vector for consistent operations
+    if size(Vin, 1) > size(Vin, 2)
+        Vin = Vin';
+    end
+
+
+
     N = length(Vin);
     % Ensure Vin is a row vector for consistent operations
     if size(Vin, 1) > size(Vin, 2)
@@ -34,16 +46,20 @@ function Vout = mySensorCircuit(Vin, h, R, L, C)
     Vout = zeros(size(Vin));
     
     if N > 10000
-        chunk_size = 10000;
-        v_C_current = 0;
-        i_current = 0;
+        chunk_size = 10000; % Process 10,000 samples at a time
+        v_C_current = 0; % Initial Capacitor Voltage
+        i_current = 0; % Initial Current
         for chunk_start = 1:chunk_size:N
             chunk_end = min(chunk_start + chunk_size - 1, N);
             chunk_length = chunk_end - chunk_start + 1;
+                    
+            % Process this chunk
             v_C_chunk = zeros(1, chunk_length);
             i_chunk = zeros(1, chunk_length);
-            v_C_chunk(1) = v_C_current;
-            i_chunk(1) = i_current;
+            v_C_chunk(1) = v_C_current; % Continue from previous chunk
+            i_chunk(1) = i_current; % Continue from previous chunk
+
+            % Standard RLC simulation for this chunk
             A = [1, h/C; -h/L, 1 - (h*R)/L];
             B = [0; h/L];
             for k = 1:chunk_length-1
@@ -51,7 +67,10 @@ function Vout = mySensorCircuit(Vin, h, R, L, C)
                 v_C_chunk(k+1) = x_next(1);
                 i_chunk(k+1) = x_next(2);
             end
+            
+            % Save this chunk's output
             Vout(chunk_start:chunk_end) = i_chunk * R;
+            % Save final state for next chunk
             v_C_current = v_C_chunk(end);
             i_current = i_chunk(end);
         end
@@ -67,11 +86,151 @@ function Vout = mySensorCircuit(Vin, h, R, L, C)
             v_C(k+1) = x_next(1);
             i(k+1) = x_next(2);
         end
-        Vout = i * R;
+        Vout = v_C;
+    end
+
+        % 1. Apply the RLC bandpass filter (main frequency selection)
+    Vbandpass = simulate_RLC_circuit_optimized(Vin, h, R, L, C);
+
+
+   
+    % 2. Gentle low-pass to remove very high frequency noise above 200 Hz
+    f_cutoff = 200;
+    R_lp = 1000;
+    C_lp = 1/(2*pi*f_cutoff*R_lp);
+    
+    Vlowpass = zeros(size(Vbandpass));
+    Vlowpass(1) = Vbandpass(1);
+    for n = 2:length(Vbandpass)
+        Vlowpass(n) = Vlowpass(n-1) + h * (Vbandpass(n) - Vlowpass(n-1)) / (R_lp * C_lp);
     end
     
-    % TASK 4 ENVELOPE DETECTION (COMMENTED OUT)
-    % Vout = abs(Vout);
+    % 3. Smart noise gating - only activate when helicopter is present
+    window_size = min(10000, floor(0.2/h));  % 200ms windows for better detection
+    rms_moving = zeros(1, length(Vlowpass));
+    
+    for i = 1:length(Vlowpass)
+        start_idx = max(1, i - floor(window_size/2));
+        end_idx = min(length(Vlowpass), i + floor(window_size/2));
+        rms_moving(i) = sqrt(mean(Vlowpass(start_idx:end_idx).^2));
+    end
+    
+    % Adaptive threshold based on signal characteristics
+    %signal_median = median(rms_moving);
+    %signal_std = std(rms_moving);
+    window_size2 = min(5000, floor(0.1/h));
+    rms_moving2 = movmean(Vout.^2, window_size2).^0.5;
+    threshold = 0.1 * max(rms_moving2);  % Much more permissive threshold
+    
+    % Apply noise gate with smooth transitions
+        gate_factor = (rms_moving > threshold) * 0.8 + 0.2;
+    Vout = Vout .* gate_factor;
+
+    
+    % Smooth the gate transitions to avoid clicks
+    gate_smooth = smoothdata(gate_factor, 'gaussian', min(1000, floor(0.05/h)));
+    
+    Vout = Vlowpass .* gate_smooth;
+    
+    % 4. Mild gain to compensate for filtering losses, but avoid clipping
+    Vout = Vout * 5.0;
+
+    % Ensure output doesn't exceed reasonable bounds
+    if max(abs(Vout)) > 1.0
+        Vout = Vout / max(abs(Vout)) * 0.95;  % Normalize to prevent clipping
+    end
+
+    if size(Vin, 1) > size(Vin, 2)
+        Vout = Vout';
+    end
+end
+
+function Vout = mySensorCircuitTest2(Vin, h)
+% Simple, working helicopter sensor
+
+    f_target = 84;  % Hz - Ingenuity rotor frequency
+    
+    % Safe, tested component values
+    L = 0.1;        % Stable value
+    C = 1/((2*pi*f_target)^2 * L);
+    R = 100;        % Moderate resistance
+    
+    N = length(Vin);
+    
+    if size(Vin, 1) > size(Vin, 2)
+        Vin = Vin';
+    end
+
+    Vout = zeros(size(Vin));
+    
+    % Simple RLC simulation - no fancy stuff
+    v_C = 0;
+    i_L = 0;
+    
+    for k = 1:N
+        Vout(k) = i_L * R;  % Output across resistor
+        
+        if k < N
+            % Basic RLC update
+            dv_C = (i_L / C) * h;
+            di_L = ((Vin(k) - v_C - i_L * R) / L) * h;
+            
+            v_C = v_C + dv_C;
+            i_L = i_L + di_L;
+        end
+    end
+    
+    % Apply reasonable gain
+    Vout = Vout * 20.0;
+    
+    
+    % Simple noise gate
+    rms_level = sqrt(mean(Vout.^2));
+    if rms_level < 0.01  % If very quiet
+        Vout = Vout * 0.1;  % Make it even quieter
+    end
+    
+    % Safety checks
+    Vout(isnan(Vout)) = 0;
+    Vout(isinf(Vout)) = 0;
+    
+    fprintf('Sensor: Max=%.4f, RMS=%.6f\n', max(abs(Vout)), rms_level);
+    
+    if size(Vin, 1) > size(Vin, 2)
+        Vout = Vout';
+    end
+end
+
+
+
+
+function Vout = simulate_RLC_circuit_optimized(Vin, h, R, L, C)
+    % Optimized RLC simulation for bandpass behavior
+    
+    N = length(Vin);
+    if size(Vin, 1) > size(Vin, 2)
+        Vin = Vin';
+    end
+    
+    Vout = zeros(size(Vin));
+    
+    % State variables: capacitor voltage and inductor current
+    v_C = 0;
+    i_L = 0;
+    
+    % Discrete-time matrices for bandpass configuration
+    % (voltage across resistor as output)
+    A = [1 - h^2/(L*C), h/C; -h/L, 1 - (h*R)/L];
+    B = [h^2/(L*C); h/L];
+    
+    for k = 1:N-1
+        x_next = A * [v_C; i_L] + B * Vin(k);
+        v_C = x_next(1);
+        i_L = x_next(2);
+        Vout(k+1) = i_L * R;  % Output voltage across resistor
+    end
+    
+    Vout(1) = 0;
     
     if size(Vin, 1) > size(Vin, 2)
         Vout = Vout';

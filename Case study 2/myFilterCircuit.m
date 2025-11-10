@@ -15,46 +15,158 @@
 % outputs:
 % Vout - time-series vector representing the output voltage of a circuit
 
-function Vout = myFilterCircuit(Vin,h)
-    % Default RC circuit (Task 1)
-    R = 1e3;
-    C = 1e-6;
-    
-    % TASK 4 - MUSIC FILTER (COMMENTED OUT)
-    % L = 0.01;
-    % C = 1e-6;
-    % R = 100;
-    
+function Vout = myFilterCircuit(Vin, h)
+
+ % STAGE 1: Remove 60Hz hum with band-stop
+    f_notch = 60;
+    L = 0.1;
+    C = 1/((2*pi*f_notch)^2 * L);
+    R = 100; 
+
     N = length(Vin);
-    
     % Ensure Vin is a row vector for consistent operations
     if size(Vin, 1) > size(Vin, 2)
         Vin = Vin';
     end
-    % Pre-allocate Vout with same dimensions as Vin
     Vout = zeros(size(Vin));
-    Vout(1) = 0;
+    
     if N > 10000
-        chunk_size = 10000;
-        v_out_current = 0;
+        chunk_size = 10000; % Process 10,000 samples at a time
+        v_C_current = 0; % Initial Capacitor Voltage
+        i_current = 0; % Initial Current
         for chunk_start = 1:chunk_size:N
             chunk_end = min(chunk_start + chunk_size - 1, N);
             chunk_length = chunk_end - chunk_start + 1;
-            v_out_chunk = zeros(1, chunk_length);
-            v_out_chunk(1) = v_out_current;
-            for n = 2:chunk_length
-                v_out_chunk(n) = v_out_chunk(n-1) + h * (Vin(chunk_start + n - 2) - v_out_chunk(n-1)) / (R * C);
+                    
+            % Process this chunk
+            v_C_chunk = zeros(1, chunk_length);
+            i_chunk = zeros(1, chunk_length);
+            v_C_chunk(1) = v_C_current; % Continue from previous chunk
+            i_chunk(1) = i_current; % Continue from previous chunk
+
+            % Standard RLC simulation for this chunk
+            A = [1, h/C; -h/L, 1 - (h*R)/L];
+            B = [0; h/L];
+            for k = 1:chunk_length-1
+                x_next = A * [v_C_chunk(k); i_chunk(k)] + B * Vin(chunk_start + k - 1);
+                v_C_chunk(k+1) = x_next(1);
+                i_chunk(k+1) = x_next(2);
             end
-            Vout(chunk_start:chunk_end) = v_out_chunk;
-            v_out_current = v_out_chunk(end);
+            
+            % Save this chunk's output
+            Vout(chunk_start:chunk_end) = i_chunk * R;
+            % Save final state for next chunk
+            v_C_current = v_C_chunk(end);
+            i_current = i_chunk(end);
         end
     else
-        for n = 2:N
-            Vout(n) = Vout(n-1) + h * (Vin(n-1) - Vout(n-1)) / (R * C);
+        v_C = zeros(1, N);
+        i = zeros(1, N);
+        v_C(1) = 0;
+        i(1) = 0;
+            A = [1, h/C; -h/L, 1 - (h*R)/L]; % replaced A and B with the derivation from google docs.
+            B = [0; h/L];
+        for k = 1:N-1
+            x_next = A * [v_C(k); i(k)] + B * Vin(k);
+            v_C(k+1) = x_next(1);
+            i(k+1) = x_next(2);
         end
+        Vout = v_C;
+    
+    Vstage1 = v_C;  % Band-stop output
+    % STAGE 2: Remove high-frequency hiss with low-pass
+    f_cutoff = 5000;  % Preserve music, remove hiss
+    Vout = zeros(size(Vstage1));
+    Vout(1) = Vstage1(1);
+    tau = 1/(2*pi*f_cutoff);
+    for n = 2:length(Vstage1)
+        Vout(n) = Vout(n-1) + h * (Vstage1(n) - Vout(n-1)) / tau;
     end
-    % Ensure output has same orientation as input
+    end
     if size(Vin, 1) > size(Vin, 2)
         Vout = Vout';
     end
 end
+
+
+function Vout = myFilterCircuitTest2(Vin, h)
+% Music filter - removes 60 Hz hum and completely cuts off high frequencies
+
+    N = length(Vin);
+    if size(Vin, 1) > size(Vin, 2)
+        Vin = Vin';
+    end
+    
+    % ===== 1. REMOVE 60 Hz HUM =====
+    Y = fft(Vin);
+    f = (0:N-1) * (1/h) / N;
+    
+    % Deep notch at 60 Hz ± 2 Hz
+    notch_band = (f >= 58) & (f <= 62);
+    Y(notch_band) = Y(notch_band) * 0.01;  % 99% reduction
+    
+    Vout = real(ifft(Y));
+    
+    % ===== 2. COMPLETE HIGH-FREQUENCY CUTOFF =====
+    f_cutoff = 8000;  % Everything above 8 kHz becomes zero
+    
+    Y = fft(Vout);
+    f = (0:N-1) * (1/h) / N;
+    
+    % Keep only frequencies below cutoff and their mirrors
+    keep_mask = (f <= f_cutoff) | (f >= (1/h) - f_cutoff);
+    Y(~keep_mask) = 0 + 0i;  % Complete removal
+    
+    Vout = real(ifft(Y));
+    
+    fprintf('Filter: Removed 60 Hz hum + cut all frequencies above %.0f Hz\n', f_cutoff);
+    
+    % ===== 3. MILD GAIN =====
+    Vout = Vout * 1.2;
+    
+    % Safety checks
+    Vout(isnan(Vout)) = 0;
+    Vout(isinf(Vout)) = 0;
+    
+    if size(Vin, 1) > size(Vin, 2)
+        Vout = Vout';
+    end
+end
+
+
+
+function Vout = myFilterCircuitTest3(Vin, h)
+% Simple band-stop filter for 60 Hz
+
+    N = length(Vin);
+    if size(Vin, 1) > size(Vin, 2)
+        Vin = Vin';
+    end
+    
+    % Frequency domain notch filter - guaranteed to work
+    Y = fft(Vin);
+    f = (0:N-1) * (1/h) / N;
+    
+    % Create a deep notch at 60 Hz ± 2 Hz
+    notch_band = (f >= 58) & (f <= 62);
+    Y(notch_band) = Y(notch_band) * 0.01;  % 99% reduction at 60 Hz
+    
+    Vout = real(ifft(Y));
+    
+    % Remove high-frequency noise
+    f_cutoff = 10000;
+    R_lp = 1000;
+    C_lp = 1/(2*pi*f_cutoff*R_lp);
+    
+    Vtemp = Vout;
+    for n = 2:length(Vout)
+        Vtemp(n) = Vtemp(n-1) + h * (Vout(n) - Vtemp(n-1)) / (R_lp * C_lp);
+    end
+    Vout = Vtemp;
+    
+    if size(Vin, 1) > size(Vin, 2)
+        Vout = Vout';
+    end
+end
+
+

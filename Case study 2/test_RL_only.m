@@ -8,10 +8,12 @@ t = 0:h:t_end;
 Vin = zeros(size(t));
 Vin(2:end) = 1;
 
-v_L = myResonatorCircuit(Vin, h);
+v_L = simulate_RL_Circuit(Vin, h);
 
 figure;
 plot(t*1000, Vin, 'r--', t*1000, v_L, 'b-');
 xlabel('Time (ms)'); ylabel('Voltage (V)');
 title('RL Circuit - Inductor Voltage');
 legend('v_{in}', 'v_L'); grid on;
+
+

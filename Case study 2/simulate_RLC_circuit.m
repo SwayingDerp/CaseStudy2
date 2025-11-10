@@ -1,29 +1,13 @@
-%% Case study 3: Circuits as Resonators, Sensors, and Filters
-% *ESE 105* 
-%
-% *Name: FILL IN HERE*
-%
-% function myResonatorCircuit(Vin,h) receives a time-series voltage sequence
-% sampled with interval h, and returns the output voltage sequence produced
-% by a circuit
-%
-% inputs:
-% Vin - time-series vector representing the voltage input to a circuit
-% h - scalar representing the sampling interval of the time series in
-% seconds
-%
-% outputs:
-% Vout - time-series vector representing the output voltage of a circuit
-
-function Vout = myResonatorCircuit(Vin, h)
+function Vout = simulate_RLC_circuit(Vin, h, R, L, C)
 % Modified to accept component parameters for testing by turning task 3
 % into default if there is no task
     
-    f_resonance = 440;
-    L = 0.01;
-    C = 1/((2*pi*f_resonance)^2 * L);
-    R = 0.3999;  % Smaller for longer ringing
-
+    % If no component values provided, use defaults
+    if nargin < 3
+        R = 100;
+        L = 0.1;
+        C = 0.1e-6;
+    end
     
     N = length(Vin);
     % Ensure Vin is a row vector for consistent operations
@@ -35,7 +19,7 @@ function Vout = myResonatorCircuit(Vin, h)
     if N > 10000
         chunk_size = 10000; % Process 10,000 samples at a time
         v_C_current = 0; % Initial Capacitor Voltage
-        i_current = Vin(1) / R; % Initial Current
+        i_current = 0; % Initial Current
         for chunk_start = 1:chunk_size:N
             chunk_end = min(chunk_start + chunk_size - 1, N);
             chunk_length = chunk_end - chunk_start + 1;
@@ -65,8 +49,7 @@ function Vout = myResonatorCircuit(Vin, h)
         v_C = zeros(1, N);
         i = zeros(1, N);
         v_C(1) = 0;
-        i(1) = Vin(1) / R;  % Current proportional to initial voltage
-
+        i(1) = 0;
             A = [1, h/C; -h/L, 1 - (h*R)/L]; % replaced A and B with the derivation from google docs.
             B = [0; h/L];
         for k = 1:N-1
