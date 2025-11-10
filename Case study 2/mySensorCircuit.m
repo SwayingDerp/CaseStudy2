@@ -15,7 +15,7 @@
 % outputs:
 % Vout - time-series vector representing the output voltage of a circuit
 
-function Vout = mySensorCircuit2(Vin, h)
+function Vout = mySensorCircuit(Vin, h)
 % Modified to accept component parameters for testing by turning task 3
 % into default if there is no task
 
@@ -145,61 +145,7 @@ function Vout = mySensorCircuit2(Vin, h)
     end
 end
 
-function Vout = mySensorCircuitTest2(Vin, h)
-% Simple, working helicopter sensor
 
-    f_target = 84;  % Hz - Ingenuity rotor frequency
-    
-    % Safe, tested component values
-    L = 0.1;        % Stable value
-    C = 1/((2*pi*f_target)^2 * L);
-    R = 100;        % Moderate resistance
-    
-    N = length(Vin);
-    
-    if size(Vin, 1) > size(Vin, 2)
-        Vin = Vin';
-    end
-
-    Vout = zeros(size(Vin));
-    
-    % Simple RLC simulation - no fancy stuff
-    v_C = 0;
-    i_L = 0;
-    
-    for k = 1:N
-        Vout(k) = i_L * R;  % Output across resistor
-        
-        if k < N
-            % Basic RLC update
-            dv_C = (i_L / C) * h;
-            di_L = ((Vin(k) - v_C - i_L * R) / L) * h;
-            
-            v_C = v_C + dv_C;
-            i_L = i_L + di_L;
-        end
-    end
-    
-    % Apply reasonable gain
-    Vout = Vout * 20.0;
-    
-    
-    % Simple noise gate
-    rms_level = sqrt(mean(Vout.^2));
-    if rms_level < 0.01  % If very quiet
-        Vout = Vout * 0.1;  % Make it even quieter
-    end
-    
-    % Safety checks
-    Vout(isnan(Vout)) = 0;
-    Vout(isinf(Vout)) = 0;
-    
-    fprintf('Sensor: Max=%.4f, RMS=%.6f\n', max(abs(Vout)), rms_level);
-    
-    if size(Vin, 1) > size(Vin, 2)
-        Vout = Vout';
-    end
-end
 
 
 

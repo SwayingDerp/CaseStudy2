@@ -41,8 +41,8 @@ ylabel('Voltage (V)');
 title('Tuning Fork Ring Duration Measurement');
 grid on;
 
-%soundsc(VringingCompetition,Fs);
-%pause(85);
+soundsc(VringingCompetition,Fs);
+pause(105);
 
 %% Task 2: Audio sensor
 
