@@ -19,9 +19,9 @@ function Vout = myFilterCircuit(Vin, h)
 
  % STAGE 1: Remove 60Hz hum with band-stop
     f_notch = 60;
-    L = 1;
+    L = 0.5;
     C = 1/((2*pi*f_notch)^2 * L);
-    R = 10; 
+    R = 200; 
 
     N = length(Vin);
     % Ensure Vin is a row vector for consistent operations
@@ -55,13 +55,10 @@ function Vout = myFilterCircuit(Vin, h)
                 i_chunk(k+1) = x_next(2);
             end
             
-                        % Compute derivative of current (di/dt)
-            di = [diff(i_chunk)/h, 0];
-            % Voltage across LC = v_C + L * di/dt
-            V_LC = v_C_chunk + L * di;
-            % Band-stop output = input - LC voltage
-            Vout(chunk_start:chunk_end) = Vin(chunk_start:chunk_end) - V_LC;
-
+            % Save this chunk's output
+            for k = 1:chunk_length
+                Vout(chunk_start + k - 1) = v_C_chunk(k) + i_chunk(k) * (2*pi*f_notch*L);
+            end
             % Save final state for next chunk
             v_C_current = v_C_chunk(end);
             i_current = i_chunk(end);
@@ -80,9 +77,9 @@ function Vout = myFilterCircuit(Vin, h)
             i(k+1) = x_next(2);
         end
         % BAND-STOP OUTPUT: Voltage across L + C combination
-        di = [diff(i)/h, 0];
-        V_LC = v_C + L * di;
-        Vout = Vin - V_LC;  % band-stop output
+        for k = 1:N
+            Vout(k) = v_C(k) + i(k) * (2*pi*f_notch*L);
+        end
 
 
 
