@@ -28,6 +28,8 @@ function Vout = myFilterCircuit(Vin, h)
     if size(Vin, 1) > size(Vin, 2)
         Vin = Vin';
     end
+
+
     Vout = zeros(size(Vin));
     
     if N > 10000

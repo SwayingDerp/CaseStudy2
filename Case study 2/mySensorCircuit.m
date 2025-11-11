@@ -21,20 +21,11 @@ function Vout = mySensorCircuit(Vin, h)
 
 % Helicopter detector PART 4 - tuned to 84 Hz
     f_target = 84;  % Hz - Ingenuity rotor frequency
-    L = 0.5;        % Reduced inductance for better numerical stability
+    L = 2;        % Reduced inductance for better numerical stability
     C = 1/((2*pi*f_target)^2 * L);
-    R = 50;         % Increased resistance for wider bandwidth
-
-    
+    R = 3;         % Increased resistance for wider bandwidth
 
 
-    
-    
-    N = length(Vin);
-    % Ensure Vin is a row vector for consistent operations
-    if size(Vin, 1) > size(Vin, 2)
-        Vin = Vin';
-    end
 
 
 
@@ -86,54 +77,8 @@ function Vout = mySensorCircuit(Vin, h)
             v_C(k+1) = x_next(1);
             i(k+1) = x_next(2);
         end
-        Vout = v_C;
+        Vout = i * R;
     end
-
-        % 1. Apply the RLC bandpass filter (main frequency selection)
-    Vbandpass = simulate_RLC_circuit_optimized(Vin, h, R, L, C);
-
-
-   
-    % 2. Gentle low-pass to remove very high frequency noise above 200 Hz
-    f_cutoff = 200;
-    R_lp = 1000;
-    C_lp = 1/(2*pi*f_cutoff*R_lp);
-    
-    Vlowpass = zeros(size(Vbandpass));
-    Vlowpass(1) = Vbandpass(1);
-    for n = 2:length(Vbandpass)
-        Vlowpass(n) = Vlowpass(n-1) + h * (Vbandpass(n) - Vlowpass(n-1)) / (R_lp * C_lp);
-    end
-    
-    % 3. Smart noise gating - only activate when helicopter is present
-    window_size = min(10000, floor(0.2/h));  % 200ms windows for better detection
-    rms_moving = zeros(1, length(Vlowpass));
-    
-    for i = 1:length(Vlowpass)
-        start_idx = max(1, i - floor(window_size/2));
-        end_idx = min(length(Vlowpass), i + floor(window_size/2));
-        rms_moving(i) = sqrt(mean(Vlowpass(start_idx:end_idx).^2));
-    end
-    
-    % Adaptive threshold based on signal characteristics
-    %signal_median = median(rms_moving);
-    %signal_std = std(rms_moving);
-    window_size2 = min(5000, floor(0.1/h));
-    rms_moving2 = movmean(Vout.^2, window_size2).^0.5;
-    threshold = 0.1 * max(rms_moving2);  % Much more permissive threshold
-    
-    % Apply noise gate with smooth transitions
-        gate_factor = (rms_moving > threshold) * 0.8 + 0.2;
-    Vout = Vout .* gate_factor;
-
-    
-    % Smooth the gate transitions to avoid clicks
-    gate_smooth = smoothdata(gate_factor, 'gaussian', min(1000, floor(0.05/h)));
-    
-    Vout = Vlowpass .* gate_smooth;
-    
-    % 4. Mild gain to compensate for filtering losses, but avoid clipping
-    Vout = Vout * 5.0;
 
     % Ensure output doesn't exceed reasonable bounds
     if max(abs(Vout)) > 1.0
@@ -148,37 +93,3 @@ end
 
 
 
-
-
-function Vout = simulate_RLC_circuit_optimized(Vin, h, R, L, C)
-    % Optimized RLC simulation for bandpass behavior
-    
-    N = length(Vin);
-    if size(Vin, 1) > size(Vin, 2)
-        Vin = Vin';
-    end
-    
-    Vout = zeros(size(Vin));
-    
-    % State variables: capacitor voltage and inductor current
-    v_C = 0;
-    i_L = 0;
-    
-    % Discrete-time matrices for bandpass configuration
-    % (voltage across resistor as output)
-    A = [1 - h^2/(L*C), h/C; -h/L, 1 - (h*R)/L];
-    B = [h^2/(L*C); h/L];
-    
-    for k = 1:N-1
-        x_next = A * [v_C; i_L] + B * Vin(k);
-        v_C = x_next(1);
-        i_L = x_next(2);
-        Vout(k+1) = i_L * R;  % Output voltage across resistor
-    end
-    
-    Vout(1) = 0;
-    
-    if size(Vin, 1) > size(Vin, 2)
-        Vout = Vout';
-    end
-end

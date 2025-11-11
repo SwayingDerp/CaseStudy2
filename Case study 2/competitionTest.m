@@ -41,8 +41,8 @@ ylabel('Voltage (V)');
 title('Tuning Fork Ring Duration Measurement');
 grid on;
 
-soundsc(VringingCompetition,Fs);
-pause(105);
+%soundsc(VringingCompetition,Fs);
+%pause(105);
 
 %% Task 2: Audio sensor
 
@@ -58,12 +58,12 @@ plotPowerSpectrum(Vsound,Fs);
 plotPowerSpectrum(VsoundFiltered,Fs);
 
 % play original sound
-%playSound(Vsound,Fs);
-%pause(3);
+playSound(Vsound,Fs);
+pause(3);
 
 % play sound after circuit filter
-%playSound(VsoundFiltered,Fs);
-%pause(5);
+playSound(VsoundFiltered,Fs);
+pause(5);
 
 %% Task 3: Music filter
 
@@ -85,7 +85,7 @@ plotPowerSpectrum(Vsound,Fs);
 plotPowerSpectrum(VsoundFiltered,Fs);
 
 % play original sound
-playSound(Vsound,Fs);
+%playSound(Vsound,Fs);
 
 % play sound after circuit filter
-playSound(VsoundFiltered,Fs);
+%playSound(VsoundFiltered,Fs);

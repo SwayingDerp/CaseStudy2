@@ -109,7 +109,10 @@ function Vout = myResonatorCircuit(Vin, h)
     Vout = Vout .* gate_factor;
 
     
-
+    % Smooth the gate transitions to avoid clicks
+    gate_smooth = smoothdata(gate_factor, 'gaussian', min(1000, floor(0.05/h)));
+    
+    Vout = Vlowpass .* gate_smooth;
 
     if size(Vin, 1) > size(Vin, 2)
         Vout = Vout';
