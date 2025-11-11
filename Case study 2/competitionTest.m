@@ -62,8 +62,8 @@ plotPowerSpectrum(VsoundFiltered,Fs);
 %pause(3);
 
 % play sound after circuit filter
-%playSound(VsoundFiltered,Fs);
-%pause(5);
+playSound(VsoundFiltered,Fs);
+pause(5);
 
 %% Task 3: Music filter
 

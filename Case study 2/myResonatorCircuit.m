@@ -16,8 +16,6 @@
 % Vout - time-series vector representing the output voltage of a circuit
 
 function Vout = myResonatorCircuit(Vin, h)
-% Modified to accept component parameters for testing by turning task 3
-% into default if there is no task
     
     f_resonance = 440;
     L = 0.01;
@@ -76,37 +74,6 @@ function Vout = myResonatorCircuit(Vin, h)
         end
         Vout = i * R;
 
- % 2. Gentle low-pass to remove very high frequency noise above 200 Hz
-    f_cutoff = 150;
-    R_lp = 1000;
-    C_lp = 1/(2*pi*f_cutoff*R_lp);
-    
-    Vlowpass = zeros(size(Vout));
-    Vlowpass(1) = Vout(1);
-    for n = 2:length(Vout)
-        Vlowpass(n) = Vlowpass(n-1) + h * (Vout(n) - Vlowpass(n-1)) / (R_lp * C_lp);
-    end
-    
-    % 3. Smart noise gating - only activate when helicopter is present
-    window_size = min(10000, floor(0.2/h));  % 200ms windows for better detection
-    rms_moving = zeros(1, length(Vlowpass));
-    
-    for i = 1:length(Vlowpass)
-        start_idx = max(1, i - floor(window_size/2));
-        end_idx = min(length(Vlowpass), i + floor(window_size/2));
-        rms_moving(i) = sqrt(mean(Vlowpass(start_idx:end_idx).^2));
-    end
-    
-    % Adaptive threshold based on signal characteristics
-    %signal_median = median(rms_moving);
-    %signal_std = std(rms_moving);
-    window_size2 = min(5000, floor(0.1/h));
-    rms_moving2 = movmean(Vout.^2, window_size2).^0.5;
-    threshold = 0.1 * max(rms_moving2);  % Much more permissive threshold
-    
-    % Apply noise gate with smooth transitions
-        gate_factor = (rms_moving > threshold) * 0.8 + 0.2;
-    Vout = Vout .* gate_factor;
 
     
 

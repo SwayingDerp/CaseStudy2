@@ -115,6 +115,45 @@ end
 
 % Sensor Circuit
 
+    % Ensure output doesn't exceed reasonable bounds
+    if max(abs(Vout)) > 1.0
+        Vout = Vout / max(abs(Vout)) * 0.95;  % Normalize to prevent clipping
+    end
+
+    % ===== NOISE GATE: QUIET WHEN NO HELICOPTER =====
+    window_size = min(5000, floor(0.1/h));  % 100ms window
+    rms_moving = zeros(1, length(Vout));
+    
+    % Calculate moving RMS (signal strength over time)
+    for i = 1:length(Vout)
+        start_idx = max(1, i - floor(window_size/2));
+        end_idx = min(length(Vout), i + floor(window_size/2));
+        rms_moving(i) = sqrt(mean(Vout(start_idx:end_idx).^2));
+    end
+    
+    % Set threshold - when signal is below this, helicopter is "off"
+    threshold = 0.005 * max(rms_moving);  % 5% of peak level
+    
+    % Apply noise gate: reduce volume when signal is below threshold
+    gate_factor = zeros(size(Vout));
+    for i = 1:length(Vout)
+        if rms_moving(i) > threshold
+            gate_factor(i) = 1.0;  % Full volume when helicopter detected
+        else
+            gate_factor(i) = 0.1;  % 90% quieter when no helicopter
+        end
+    end
+    
+    % Smooth the gate transitions to avoid clicks/pops
+    smooth_window = min(1000, floor(0.02/h));  % 20ms smoothing
+    gate_smooth = movmean(gate_factor, smooth_window);
+    
+    Vout = Vout .* gate_smooth;
+    
+    % Debug output
+    helicopter_on_time = mean(gate_factor > 0.5) * 100;
+    fprintf('Noise gate: Helicopter detected %.1f%% of the time\n', helicopter_on_time);
+
 function Vout = mySensorCircuitTest2(Vin, h)
 % Simple, working helicopter sensor
 
@@ -218,4 +257,36 @@ end
 
 
 
+    % Resonator Circuit
+
+     % 2. Gentle low-pass to remove very high frequency noise above 200 Hz
+    f_cutoff = 150;
+    R_lp = 1000;
+    C_lp = 1/(2*pi*f_cutoff*R_lp);
     
+    Vlowpass = zeros(size(Vout));
+    Vlowpass(1) = Vout(1);
+    for n = 2:length(Vout)
+        Vlowpass(n) = Vlowpass(n-1) + h * (Vout(n) - Vlowpass(n-1)) / (R_lp * C_lp);
+    end
+    
+    % 3. Smart noise gating - only activate when helicopter is present
+    window_size = min(10000, floor(0.2/h));  % 200ms windows for better detection
+    rms_moving = zeros(1, length(Vlowpass));
+    
+    for i = 1:length(Vlowpass)
+        start_idx = max(1, i - floor(window_size/2));
+        end_idx = min(length(Vlowpass), i + floor(window_size/2));
+        rms_moving(i) = sqrt(mean(Vlowpass(start_idx:end_idx).^2));
+    end
+    
+    % Adaptive threshold based on signal characteristics
+    %signal_median = median(rms_moving);
+    %signal_std = std(rms_moving);
+    window_size2 = min(5000, floor(0.1/h));
+    rms_moving2 = movmean(Vout.^2, window_size2).^0.5;
+    threshold = 0.1 * max(rms_moving2);  % Much more permissive threshold
+    
+    % Apply noise gate with smooth transitions
+        gate_factor = (rms_moving > threshold) * 0.8 + 0.2;
+    Vout = Vout .* gate_factor;

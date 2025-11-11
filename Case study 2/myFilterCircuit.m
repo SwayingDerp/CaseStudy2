@@ -18,9 +18,9 @@
 function Vout = myFilterCircuit(Vin, h)
 
  % STAGE 1: Remove 60Hz hum with band-stop
-    f_notch = 60;
+    f_target = 60;
     L = 0.1;
-    C = 1/((2*pi*f_notch)^2 * L);
+    C = 1/((2*pi*f_target)^2 * L);
     R = 100;
     Fs = 1/h;
 
@@ -83,6 +83,7 @@ function Vout = myFilterCircuit(Vin, h)
 
     end
 
+    
     %-------FFT method to remove 60 Hz hum
     Y = fft(Vin);
     freq = (0:N-1) * Fs / N;
@@ -95,8 +96,19 @@ function Vout = myFilterCircuit(Vin, h)
     notch_mirror = (freq >= Fs-62) & (freq <= Fs-58);
     Y(notch_mirror) = Y(notch_mirror) * 0.001;
     
-    Vout = real(ifft(Y));
     %----------
+
+
+    % ===== REMOVE HIGH-FREQUENCY NOISE =====
+    f_cutoff = 10^3.6;  % ≈ 3162 Hz - remove everything above this
+    high_freq_noise = (freq > f_cutoff) & (freq < Fs - f_cutoff);
+    Y(high_freq_noise) = 0;  % Complete removal
+    
+    % Convert back to time domain
+    Vout = real(ifft(Y));
+    
+    % Mild gain to compensate for filtering
+    Vout = Vout * 1.5;
 
     if size(Vin, 1) > size(Vin, 2)
         Vout = Vout';

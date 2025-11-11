@@ -16,8 +16,7 @@
 % Vout - time-series vector representing the output voltage of a circuit
 
 function Vout = mySensorCircuit(Vin, h)
-% Modified to accept component parameters for testing by turning task 3
-% into default if there is no task
+
 
 % Helicopter detector PART 4 - tuned to 84 Hz
     f_target = 84;  % Hz - Ingenuity rotor frequency
@@ -78,11 +77,6 @@ function Vout = mySensorCircuit(Vin, h)
             i(k+1) = x_next(2);
         end
         Vout = i * R;
-    end
-
-    % Ensure output doesn't exceed reasonable bounds
-    if max(abs(Vout)) > 1.0
-        Vout = Vout / max(abs(Vout)) * 0.95;  % Normalize to prevent clipping
     end
 
     if size(Vin, 1) > size(Vin, 2)
