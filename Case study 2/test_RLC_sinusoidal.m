@@ -1,9 +1,11 @@
 % Test RLC Circuit with Sinusoidal Inputs (Task 3.3)
 clear; close all; clc;
 
-h = 1/192000;
-R = 100; L = 0.1; C = 0.1e-6;
+% Circuit parameters and sampling
+h = 1/192000;   % Sampling interval (192 kHz sampling rate)
+R = 100; L = 0.1; C = 0.1e-6;   % RLC circuit components
 
+% Test frequencies covering range below, at, and above resonance
 frequencies = [10, 1525, 1600, 5000, 10000]; % Hz
 t_end = 0.1; % 100 ms per frequency
 
@@ -23,14 +25,16 @@ t_end = 0.1; % 100 ms per frequency
 %    plot_range = plot_Start:length(t);
     
 
-    
+   % Create figure for all subplots
    figure('Position', [100, 100, 1200, 800]);
 
+% Test each frequency
 for i = 1:length(frequencies)
     f = frequencies(i);
-    t = 0:h:t_end;
-    Vin = sin(2*pi*f*t);
+    t = 0:h:t_end;              % Time vector
+    Vin = sin(2*pi*f*t);        % Input sine wave
     
+    % Simulate RLC circuit response
     Vout = simulate_RLC_circuit(Vin, h, R, L, C);
     
     % Create subplot
@@ -40,7 +44,8 @@ for i = 1:length(frequencies)
     samples_per_cycle = round(1/(f*h));
     plot_Start = max(1, length(t) - 3 * samples_per_cycle); % Show last 3 cycles
     plot_range = plot_Start:length(t);
-        % Ensure plot_range doesn't exceed array bounds
+
+    % Ensure plot_range doesn't exceed array bounds
     if plot_Start > length(t)
         plot_range = 1:length(t);
         warning('Not enough samples for %d Hz, plotting entire signal', f);
@@ -60,19 +65,15 @@ for i = 1:length(frequencies)
     input_amp = max(Vin(plot_range)) - min(Vin(plot_range));
     output_amp = max(Vout(plot_range)) - min(Vout(plot_range));
     amp_ratio = output_amp/input_amp;
-        % Play sound
+    % Play sound
     soundsc(Vout, 1/h);
-    pause(2);
+    pause(2); % Pause between frequencies to hear each tone clearly
 end
 
     %end
-    
 
-    
     % Calculate amplitude ratio
     input_amp = max(Vin(plot_range)) - min(Vin(plot_range));
     output_amp = max(Vout(plot_range)) - min(Vout(plot_range));
     fprintf('Frequency: %5d Hz, Amplitude Ratio: %.3f\n', f, output_amp/input_amp);
-    
-
 %end

@@ -33,16 +33,18 @@ for i = 1:length(component_sets)
   
     
     % Calculate damping ratio for analysis
-    w0 = 1/sqrt(L*C);
-    alpha = R/(2*L);
-    damping_ratio = alpha/w0;
+    w0 = 1/sqrt(L*C);           % Natural frequency
+    alpha = R/(2*L);            % Damping coefficient
+    damping_ratio = alpha/w0;   % Damping ratio
     fprintf('%s: ζ = %.3f\n', labels{i}, damping_ratio);
 
+    % Play sound of the circuit response
     fprintf('Playing: %s\n', labels{i});
     soundsc(Vout);
-    pause(2);
+    pause(2);   % Pause to hear each sound clearly
 end
 
+% Plot input signal for reference
 plot(t*1000, Vin, 'k--', 'LineWidth', 1, 'DisplayName', 'Input');
 xlabel('Time (ms)'); 
 ylabel('Voltage (V)');
