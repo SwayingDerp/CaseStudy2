@@ -19,9 +19,10 @@ function Vout = myFilterCircuit(Vin, h)
 
  % STAGE 1: Remove 60Hz hum with band-stop
     f_notch = 60;
-    L = 1;
+    L = 0.1;
     C = 1/((2*pi*f_notch)^2 * L);
-    R = 10; 
+    R = 100;
+    Fs = 1/h;
 
     N = length(Vin);
     % Ensure Vin is a row vector for consistent operations
@@ -55,12 +56,8 @@ function Vout = myFilterCircuit(Vin, h)
                 i_chunk(k+1) = x_next(2);
             end
             
-                        % Compute derivative of current (di/dt)
-            di = [diff(i_chunk)/h, 0];
-            % Voltage across LC = v_C + L * di/dt
-            V_LC = v_C_chunk + L * di;
-            % Band-stop output = input - LC voltage
-            Vout(chunk_start:chunk_end) = Vin(chunk_start:chunk_end) - V_LC;
+            
+            Vout(chunk_start:chunk_end) = v_C_chunk;
 
             % Save final state for next chunk
             v_C_current = v_C_chunk(end);
@@ -79,16 +76,28 @@ function Vout = myFilterCircuit(Vin, h)
             v_C(k+1) = x_next(1);
             i(k+1) = x_next(2);
         end
-        % BAND-STOP OUTPUT: Voltage across L + C combination
-        di = [diff(i)/h, 0];
-        V_LC = v_C + L * di;
-        Vout = Vin - V_LC;  % band-stop output
+        Vout = v_C;
 
 
 
 
     end
+
+    %-------FFT method to remove 60 Hz hum
+    Y = fft(Vin);
+    freq = (0:N-1) * Fs / N;
     
+    % Remove 60 Hz ± 2 Hz
+    notch_band = (freq >= 58) & (freq <= 62);
+    Y(notch_band) = Y(notch_band) * 0.001;
+    
+    % Remove mirror frequencies
+    notch_mirror = (freq >= Fs-62) & (freq <= Fs-58);
+    Y(notch_mirror) = Y(notch_mirror) * 0.001;
+    
+    Vout = real(ifft(Y));
+    %----------
+
     if size(Vin, 1) > size(Vin, 2)
         Vout = Vout';
     end
